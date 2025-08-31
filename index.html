@@ -208,5 +208,32 @@
       }
     });
 
-    function formatTime(sec) {
-      const m =
+        function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function estimateBPM(buf) {
+      const sr = buf.sampleRate;
+      const data = buf.getChannelData(0);
+      const peaks = [];
+      for (let i = 0; i < data.length; i += 1024) {
+        const slice = data.slice(i, i + 1024);
+        const peak = Math.max(...slice);
+        if (peak > 0.3) peaks.push(i / sr);
+      }
+      const intervals = [];
+      for (let i = 1; i < peaks.length; i++) {
+        intervals.push(peaks[i] - peaks[i - 1]);
+      }
+      if (!intervals.length) return { bpm: NaN };
+      const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+      const bpm = 60 / avg;
+      return { bpm };
+    }
+  </script>
+</body>
+</html>
+
+
