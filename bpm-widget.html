@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Detector de BPM</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
     body {
       margin: 0;
       padding: 2em;
@@ -17,16 +14,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      min-height: 100vh;
     }
     h1 {
       font-size: 1.8em;
       margin-bottom: 1em;
       font-weight: 400;
     }
-    input[type="file"], button {
-      margin: 0.5em 0;
+    input, button {
+      margin: 0.5em;
       padding: 0.6em 1em;
       font-size: 1em;
       border: 1px solid #fff;
@@ -40,10 +35,17 @@
       color: #000;
     }
     #bpm {
-      margin-top: 1.5em;
+      margin-top: 1em;
       font-size: 2em;
       font-weight: bold;
-      color: #fff;
+    }
+    canvas {
+      margin-top: 2em;
+      background: #111;
+      border: 1px solid #fff;
+      width: 100%;
+      max-width: 600px;
+      height: 150px;
     }
   </style>
 </head>
@@ -52,10 +54,15 @@
   <input type="file" id="audioFile" accept="audio/*">
   <button onclick="analyze()">Detectar BPM</button>
   <div id="bpm">BPM: --</div>
+  <canvas id="visualizer"></canvas>
 
   <script>
     async function analyze() {
       const fileInput = document.getElementById('audioFile');
+      const canvas = document.getElementById('visualizer');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       if (!fileInput.files[0]) {
         alert('Selecciona un archivo de audio');
         return;
@@ -81,12 +88,25 @@
         for (let i = 0; i < audioBuffer.length; i += analyser.fftSize) {
           analyser.getFloatTimeDomainData(data);
           const peak = Math.max(...data);
-          if (peak > 0.6) peaks.push(i / audioBuffer.sampleRate);
+          if (peak > 0.3) {
+            const time = i / audioBuffer.sampleRate;
+            peaks.push(time);
+
+            // Visualización de pico
+            const x = (time / audioBuffer.duration) * canvas.width;
+            ctx.fillStyle = '#00ffe0';
+            ctx.fillRect(x, 0, 2, canvas.height);
+          }
         }
 
         const intervals = [];
         for (let i = 1; i < peaks.length; i++) {
           intervals.push(peaks[i] - peaks[i - 1]);
+        }
+
+        if (intervals.length === 0) {
+          document.getElementById('bpm').textContent = 'BPM: No detectado';
+          return;
         }
 
         const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
