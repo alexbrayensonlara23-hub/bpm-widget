@@ -3,101 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Detector de BPM</title>
+  <title>DripSounds BPM Detector</title>
   <style>
     :root {
       --bg: #000;
       --fg: #fff;
+      --accent: #00ffe0; /* Ajusta al color de marca */
       --muted: #1a1a1a;
-      --accent: #fff;
     }
     * { box-sizing: border-box; }
     body {
-      margin: 0; padding: 24px;
+      margin: 0; padding: 20px;
       background: var(--bg); color: var(--fg);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      display: grid; place-items: center; min-height: 100vh;
+      font-family: 'Helvetica Neue', sans-serif;
+      display: flex; flex-direction: column; align-items: center;
     }
-    .card {
-      width: 100%; max-width: 720px; padding: 20px;
-      border: 1px solid var(--fg); border-radius: 8px;
-      background: transparent;
+    h1 {
+      font-size: 1.5em; font-weight: 500; margin-bottom: 1em;
+      color: var(--accent);
     }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    h1 { font-size: 20px; font-weight: 500; margin: 0 0 16px 0; }
-    .controls { margin: 12px 0; display: flex; gap: 12px; flex-wrap: wrap; }
-    .btn, .file, .range {
-      border: 1px solid var(--fg); background: transparent; color: var(--fg);
-      padding: 10px 12px; border-radius: 6px; font-size: 14px;
+    .controls {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1em;
     }
-    .btn { cursor: pointer; }
-    .btn:hover { background: var(--fg); color: var(--bg); }
-    .file { padding: 8px; }
-    .range { width: 180px; height: 36px; padding: 0 8px; }
-    .range input[type="range"] {
-      -webkit-appearance: none; appearance: none;
-      width: 100%; height: 4px; background: var(--fg); outline: none; border-radius: 2px;
+    input[type="file"], button, input[type="range"] {
+      background: transparent; color: var(--fg);
+      border: 1px solid var(--fg); border-radius: 4px;
+      padding: 8px 12px; font-size: 14px;
     }
-    .range input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none; appearance: none;
-      width: 14px; height: 14px; border-radius: 50%; background: var(--fg);
-      cursor: pointer;
+    button:hover {
+      background: var(--accent); color: var(--bg);
+      border-color: var(--accent);
     }
-    .stat {
-      font-size: 28px; font-weight: 600; letter-spacing: 0.5px; margin-top: 8px;
+    #bpm {
+      font-size: 1.8em; font-weight: bold; margin-top: 0.5em;
     }
-    .muted { color: #bbb; font-size: 12px; }
     .bar {
-      margin-top: 14px; width: 100%; height: 6px; background: var(--muted);
-      border-radius: 3px; overflow: hidden;
+      width: 100%; max-width: 600px; height: 6px;
+      background: var(--muted); border-radius: 3px; overflow: hidden;
+      margin-top: 1em;
     }
     .bar > div {
-      height: 100%; width: 0%; background: var(--fg);
+      height: 100%; width: 0%; background: var(--accent);
       transition: width 0.1s linear;
     }
-    .footer { margin-top: 10px; display: flex; gap: 12px; align-items: center; justify-content: space-between; }
-    .capsule { border: 1px solid var(--fg); border-radius: 999px; padding: 6px 10px; font-size: 12px; }
+    canvas {
+      margin-top: 1em; background: var(--muted);
+      border: 1px solid var(--fg); width: 100%; max-width: 600px; height: 150px;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Detector de BPM</h1>
-
-    <div class="row">
-      <input class="file" id="file" type="file" accept="audio/*" />
-      <button class="btn" id="analyzeBtn">Analizar BPM</button>
-      <button class="btn" id="playBtn" disabled>Play</button>
-      <button class="btn" id="pauseBtn" disabled>Pause</button>
-      <label class="range">
-        <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8" />
-      </label>
-    </div>
-
-    <div class="row" style="gap:24px; align-items:flex-end;">
-      <div>
-        <div class="muted">Resultado</div>
-        <div id="bpm" class="stat">BPM: --</div>
-      </div>
-      <div>
-        <div class="muted">Confianza</div>
-        <div id="conf" class="capsule">--</div>
-      </div>
-      <div>
-        <div class="muted">Duración</div>
-        <div id="dur" class="capsule">--</div>
-      </div>
-    </div>
-
-    <div class="bar" aria-label="Progreso">
-      <div id="progress"></div>
-    </div>
-
-    <div class="muted" id="status" style="margin-top:10px;">Carga un archivo de audio y presiona Analizar BPM.</div>
+  <h1>🎧 DripSounds BPM Detector</h1>
+  <div class="controls">
+    <input type="file" id="file" accept="audio/*">
+    <button id="analyzeBtn">Analizar BPM</button>
+    <button id="playBtn" disabled>Play</button>
+    <button id="pauseBtn" disabled>Pause</button>
+    <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8">
   </div>
+  <div id="bpm">BPM: --</div>
+  <div class="bar"><div id="progress"></div></div>
+  <canvas id="canvas"></canvas>
 
   <script>
-    let audioCtx, gainNode, buffer = null, source = null;
-    let startTime = 0, pausedAt = 0, isPlaying = false, rafId = null;
+    let audioCtx, gainNode, buffer, source, analyser, dataArray, canvasCtx;
+    let startTime = 0, pausedAt = 0, isPlaying = false, rafId;
 
     const fileEl = document.getElementById('file');
     const analyzeBtn = document.getElementById('analyzeBtn');
@@ -105,12 +75,7 @@
     const pauseBtn = document.getElementById('pauseBtn');
     const volEl = document.getElementById('vol');
     const bpmEl = document.getElementById('bpm');
-    const confEl = document.getElementById('conf');
-    const durEl = document.getElementById('dur');
-    const statusEl = document.getElementById('status');
     const progressEl = document.getElementById('progress');
-
-    initAudio();
 
     function initAudio() {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -118,29 +83,14 @@
       gainNode.gain.value = parseFloat(volEl.value);
       gainNode.connect(audioCtx.destination);
     }
+    initAudio();
 
     function createSource() {
-      if (!buffer) return null;
       const src = audioCtx.createBufferSource();
       src.buffer = buffer;
       src.connect(gainNode);
-      src.onended = () => {
-        if (isPlaying) stopPlayback(false); // reached end
-      };
+      src.onended = () => { if (isPlaying) stopPlayback(false); };
       return src;
-    }
-
-    function updateUILoading(isLoading, message) {
-      statusEl.textContent = message || (isLoading ? 'Procesando...' : '');
-      analyzeBtn.disabled = isLoading;
-      playBtn.disabled = !buffer;
-      pauseBtn.disabled = !isPlaying;
-    }
-
-    function formatTime(sec) {
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60);
-      return `${m}:${s.toString().padStart(2,'0')}`;
     }
 
     function startProgressLoop() {
@@ -157,25 +107,21 @@
 
     async function loadFileToBuffer(file) {
       const arrayBuffer = await file.arrayBuffer();
-      // decodeAudioData returns a Promise in modern browsers
       return await audioCtx.decodeAudioData(arrayBuffer);
     }
 
-    function stopPlayback(resetPosition = true) {
+    function stopPlayback(reset = true) {
       try { source && source.stop(0); } catch(e) {}
       source = null;
       isPlaying = false;
-      if (resetPosition) pausedAt = 0;
+      if (reset) pausedAt = 0;
       pauseBtn.disabled = true;
       playBtn.disabled = !buffer;
     }
 
     function play() {
-      if (!buffer) return;
-      if (isPlaying) return;
-
+      if (!buffer || isPlaying) return;
       source = createSource();
-      if (!source) return;
       startTime = audioCtx.currentTime;
       source.start(0, pausedAt);
       isPlaying = true;
@@ -187,158 +133,71 @@
     function pause() {
       if (!buffer || !isPlaying) return;
       pausedAt += (audioCtx.currentTime - startTime);
-      stopPlayback(false); // keep position
+      stopPlayback(false);
       startProgressLoop();
     }
 
     volEl.addEventListener('input', () => {
       gainNode.gain.value = parseFloat(volEl.value);
     });
-
-    playBtn.addEventListener('click', () => {
-      audioCtx.resume();
-      play();
-    });
-
-    pauseBtn.addEventListener('click', () => {
-      pause();
-    });
+    playBtn.addEventListener('click', () => { audioCtx.resume(); play(); });
+    pauseBtn.addEventListener('click', pause);
 
     analyzeBtn.addEventListener('click', async () => {
-      const file = fileEl.files && fileEl.files[0];
-      if (!file) {
-        alert('Selecciona un archivo de audio.');
-        return;
-      }
+      const file = fileEl.files[0];
+      if (!file) return alert('Selecciona un archivo de audio.');
       stopPlayback(true);
-      updateUILoading(true, 'Analizando BPM...');
-      try {
-        buffer = await loadFileToBuffer(file);
-        durEl.textContent = formatTime(buffer.duration);
-        const { bpm, confidence } = estimateBPM(buffer, { bpmMin: 60, bpmMax: 200 });
-        bpmEl.textContent = Number.isFinite(bpm) ? `BPM: ${Math.round(bpm)}` : 'BPM: No detectado';
-        confEl.textContent = Number.isFinite(confidence) ? `${Math.round(confidence * 100)}%` : '--';
-        statusEl.textContent = Number.isFinite(bpm) ? 'Análisis completado.' : 'No se pudo estimar el BPM. Prueba con otro fragmento o mayor volumen de transientes.';
-        playBtn.disabled = !buffer;
-        pausedAt = 0;
-        progressEl.style.width = '0%';
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent = 'Error al procesar el audio.';
-        bpmEl.textContent = 'BPM: --';
-        confEl.textContent = '--';
-      } finally {
-        analyzeBtn.disabled = false;
-      }
+      buffer = await loadFileToBuffer(file);
+      const { bpm } = estimateBPM(buffer);
+      bpmEl.textContent = Number.isFinite(bpm) ? `BPM: ${Math.round(bpm)}` : 'BPM: No detectado';
+      playBtn.disabled = !buffer;
+      pausedAt = 0;
+      progressEl.style.width = '0%';
+      setupVisualizer();
     });
 
-    // Estimación robusta de BPM con autocorrelación de la envolvente de onsets
-    function estimateBPM(buf, { bpmMin = 60, bpmMax = 200 } = {}) {
-      const sr = buf.sampleRate;
-      const channels = buf.numberOfChannels;
-      // Mezcla a mono
-      const length = buf.length;
-      const mono = new Float32Array(length);
-      for (let ch = 0; ch < channels; ch++) {
-        const data = buf.getChannelData(ch);
-        for (let i = 0; i < length; i++) mono[i] += data[i] / channels;
-      }
-
-      // Downsample simple por decimación a ~11025 Hz
-      const targetSr = 11025;
-      const decim = Math.max(1, Math.floor(sr / targetSr));
-      const dsLen = Math.floor(length / decim);
-      const ds = new Float32Array(dsLen);
-      for (let i = 0, j = 0; i < dsLen; i++, j += decim) ds[i] = mono[j];
-
-      // Envoltura de onsets: energía por frames + diferencia positiva
-      const frameSize = 1024;
-      const hopSize = 512;
-      const nFrames = Math.max(0, Math.floor((ds.length - frameSize) / hopSize));
-      if (nFrames < 4) return { bpm: NaN, confidence: NaN };
-
-      const energy = new Float32Array(nFrames);
-      for (let f = 0; f < nFrames; f++) {
-        const start = f * hopSize;
-        let sum = 0;
-        for (let k = 0; k < frameSize; k++) {
-          const v = ds[start + k];
-          sum += v * v;
-        }
-        energy[f] = sum;
-      }
-
-      // Diferencia positiva
-      const onset = new Float32Array(nFrames);
-      let maxOn = 0;
-      for (let f = 1; f < nFrames; f++) {
-        const diff = energy[f] - energy[f - 1];
-        const val = diff > 0 ? diff : 0;
-        onset[f] = val;
-        if (val > maxOn) maxOn = val;
-      }
-      // Normaliza
-      if (maxOn > 0) {
-        for (let f = 0; f < nFrames; f++) onset[f] /= maxOn;
-      }
-
-      // Autocorrelación en rango de BPM objetivo
-      const framesPerSecond = (targetSr) / hopSize;
-      const lagMin = Math.max(2, Math.floor(framesPerSecond * 60 / bpmMax));
-      const lagMax = Math.min(nFrames - 2, Math.floor(framesPerSecond * 60 / bpmMin));
-      if (lagMax <= lagMin) return { bpm: NaN, confidence: NaN };
-
-      const ac = new Float32Array(lagMax + 1);
-      for (let lag = lagMin; lag <= lagMax; lag++) {
-        let sum = 0;
-        const limit = nFrames - lag;
-        for (let n = 0; n < limit; n++) sum += onset[n] * onset[n + lag];
-        ac[lag] = sum / limit;
-      }
-
-      // Encuentra pico principal
-      let bestLag = lagMin, bestVal = -Infinity;
-      for (let lag = lagMin; lag <= lagMax; lag++) {
-        if (ac[lag] > bestVal) { bestVal = ac[lag]; bestLag = lag; }
-      }
-
-      // Interpolación parabólica simple para refinar
-      let refinedLag = bestLag;
-      if (bestLag > lagMin && bestLag < lagMax) {
-        const y1 = ac[bestLag - 1], y2 = ac[bestLag], y3 = ac[bestLag + 1];
-        const denom = (y1 - 2 * y2 + y3);
-        if (Math.abs(denom) > 1e-9) {
-          const delta = 0.5 * (y1 - y3) / denom;
-          refinedLag = bestLag + Math.max(-1, Math.min(1, delta));
-        }
-      }
-
-      // Candidatos armónicos (x0.5, x1, x2) y selección por correlación
-      const candidates = [];
-      const tryLag = (L) => {
-        if (L >= lagMin && L <= lagMax) candidates.push({ lag: L, val: ac[Math.round(L)] });
-      };
-      tryLag(refinedLag);
-      tryLag(refinedLag * 0.5);
-      tryLag(refinedLag * 2);
-      candidates.sort((a,b) => b.val - a.val);
-      const chosen = candidates[0] || { lag: refinedLag, val: ac[Math.round(refinedLag)] };
-
-      let bpm = 60 * framesPerSecond / chosen.lag;
-      // Normaliza a rango 60-200 BPM
-      while (bpm < 60) bpm *= 2;
-      while (bpm > 200) bpm /= 2;
-
-      // Confianza: pico / mediana del AC
-      const vals = [];
-      for (let lag = lagMin; lag <= lagMax; lag++) vals.push(ac[lag]);
-      vals.sort((a,b)=>a-b);
-      const mid = Math.floor(vals.length/2);
-      const median = vals.length % 2 ? vals[mid] : 0.5*(vals[mid-1]+vals[mid]);
-      const confidence = (median > 1e-9) ? Math.max(0, Math.min(1, chosen.val / (median * 4))) : 0.0;
-
-      return { bpm, confidence };
+    function setupVisualizer() {
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      dataArray = new Float32Array(analyser.fftSize);
+      gainNode.disconnect();
+      gainNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      const canvas = document.getElementById('canvas');
+      canvasCtx = canvas.getContext('2d');
+      drawVisualizer();
     }
-  </script>
-</body>
-</html>
+
+    function drawVisualizer() {
+      requestAnimationFrame(drawVisualizer);
+      analyser.getFloatTimeDomainData(dataArray);
+      canvasCtx.fillStyle = '#1a1a1a';
+      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = '#00ffe0';
+      canvasCtx.beginPath();
+      const sliceWidth = canvas.width / dataArray.length;
+      let x = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const v = dataArray[i] * 50;
+        const y = canvas.height / 2 - v;
+        i === 0 ? canvasCtx.moveTo(x, y) : canvasCtx.lineTo(x, y);
+        x += sliceWidth;
+      }
+      canvasCtx.lineTo(canvas.width, canvas.height / 2);
+      canvasCtx.stroke();
+    }
+
+    function estimateBPM(buf) {
+      const sr = buf.sampleRate;
+      const data = buf.getChannelData(0);
+      const peaks = [];
+      for (let i = 0; i < data.length; i += 1024) {
+        const slice = data.slice(i, i + 1024);
+        const peak = Math.max(...slice);
+        if (peak > 0.3) peaks.push(i / sr);
+      }
+      const intervals = [];
+      for (let i = 1; i < peaks.length; i++) intervals.push(peaks[i] - peaks[i - 1]);
+      if (!intervals.length) return { bpm: NaN };
+      const avg = intervals.reduce((a, b) => a + b
