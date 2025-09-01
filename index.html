@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Detector de BPM</title>
+  <title>BPM Detector</title>
   <!-- Fuente Anonymous Pro -->
   <link href="https://fonts.googleapis.com/css2?family=Anonymous+Pro:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -64,11 +64,11 @@
 </head>
 <body>
   <div class="card">
-    <h1>Detector de BPM</h1>
+    <h1>BPM Detector</h1>
 
     <div class="row">
       <input class="file" id="file" type="file" accept="audio/*" />
-      <button class="btn" id="analyzeBtn">Analizar BPM</button>
+      <button class="btn" id="analyzeBtn">Analyze BPM</button>
       <button class="btn" id="playBtn" disabled>Play</button>
       <button class="btn" id="pauseBtn" disabled>Pause</button>
       <label class="range">
@@ -78,15 +78,15 @@
 
     <div class="row" style="gap:24px; align-items:flex-end;">
       <div>
-        <div class="muted">Resultado</div>
+        <div class="muted">Result</div>
         <div id="bpm" class="stat">BPM: --</div>
       </div>
       <div>
-        <div class="muted">Confianza</div>
+        <div class="muted">Trust</div>
         <div id="conf" class="capsule">--</div>
       </div>
       <div>
-        <div class="muted">Duración</div>
+        <div class="muted">Duration</div>
         <div id="dur" class="capsule">--</div>
       </div>
     </div>
@@ -95,7 +95,7 @@
       <div id="progress"></div>
     </div>
 
-    <div class="muted" id="status" style="margin-top:10px;">Carga un archivo de audio y presiona Analizar BPM.</div>
+    <div class="muted" id="status" style="margin-top:10px;">Upload an audio file and press Analyze BPM.</div>
   </div>
 
   <!-- Aquí sigue tu script original sin cambios -->
@@ -346,3 +346,4 @@
   </script>
 </body>
 </html>
+
