@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -135,7 +135,7 @@
     }
 
     function updateUILoading(isLoading, message) {
-      statusEl.textContent = message || (isLoading ? 'Procesando...' : '');
+      statusEl.textContent = message || (isLoading ? 'processing...' : '');
       analyzeBtn.disabled = isLoading;
       playBtn.disabled = !buffer;
       pauseBtn.disabled = !isPlaying;
@@ -222,13 +222,13 @@
         const { bpm, confidence } = estimateBPM(buffer, { bpmMin: 60, bpmMax: 200 });
         bpmEl.textContent = Number.isFinite(bpm) ? `BPM: ${Math.round(bpm)}` : 'BPM: No detectado';
         confEl.textContent = Number.isFinite(confidence) ? `${Math.round(confidence * 100)}%` : '--';
-        statusEl.textContent = Number.isFinite(bpm) ? 'Análisis completado.' : 'No se pudo estimar el BPM. Prueba con otro fragmento o mayor volumen de transientes.';
+        statusEl.textContent = Number.isFinite(bpm) ? 'Analysis completed.' : 'The BPM could not be estimated. Try another fragment or a higher volume of transients..';
         playBtn.disabled = !buffer;
         pausedAt = 0;
         progressEl.style.width = '0%';
       } catch (err) {
         console.error(err);
-        statusEl.textContent = 'Error al procesar el audio.';
+        statusEl.textContent = 'Error processing audio.';
         bpmEl.textContent = 'BPM: --';
         confEl.textContent = '--';
       } finally {
@@ -346,4 +346,5 @@
   </script>
 </body>
 </html>
+
 
